@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Disable favicon request to avoid 404 error -->
+    <link rel="icon" href="data:,">
+
+    <!-- Basic settings -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home Automation V2</title>
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- =====================================================
+        LOGIN / SIGNUP / EMAIL VERIFY / FACE DEMO PAGE
+        All auth forms are kept inside authScreen and authCard.
+        This fixes the issue where Face Verify appears first.
+    ===================================================== -->
+
+    <div class="auth-screen" id="authScreen">
+
+        <div class="auth-card">
+
+            <div class="auth-logo">
+                <i class="fa-solid fa-house-signal"></i>
+            </div>
+
+            <h1>Smart Home Login</h1>
+
+            <p class="auth-subtitle">
+                Sign in to control your ESP32 Smart Home dashboard
+            </p>
+
+            <!-- Sign In Form: visible first -->
+            <div class="auth-form" id="loginForm">
+
+                <input
+                    type="email"
+                    id="loginEmail"
+                    placeholder="Email address">
+
+                <input
+                    type="password"
+                    id="loginPassword"
+                    placeholder="Password">
+
+                <button id="loginBtn" type="button">
+                    Sign In
+                </button>
+
+                <p class="auth-link" id="showForgot">
+                    Forgot password?
+                </p>
+
+                <p class="auth-switch">
+                    New user?
+                    <span id="showSignup">Create account</span>
+                </p>
+
+            </div>
+
+            <!-- Sign Up Form -->
+            <div class="auth-form hidden" id="signupForm">
+
+                <input
+                    type="text"
+                    id="signupName"
+                    placeholder="Username">
+
+                <input
+                    type="email"
+                    id="signupEmail"
+                    placeholder="Email address">
+
+                <input
+                    type="password"
+                    id="signupPassword"
+                    placeholder="Create password">
+
+                <button id="signupBtn" type="button">
+                    Create Account
+                </button>
+
+                <p class="auth-switch">
+                    Already have account?
+                    <span id="showLogin">Sign in</span>
+                </p>
+
+                <!-- Face / Camera verification demo button
+                     This button is hidden with signupForm.
+                     Face page opens only when this button is clicked. -->
+                <div class="face-demo-box">
+                    <button type="button" id="faceVerifyBtn" class="face-btn">
+                        <i class="fa-solid fa-face-smile"></i>
+                        Verify with Face
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Forgot Password Form -->
+            <div class="auth-form hidden" id="forgotForm">
+
+                <input
+                    type="email"
+                    id="forgotEmail"
+                    placeholder="Enter your registered email">
+
+                <button id="forgotBtn" type="button">
+                    Send Reset Email
+                </button>
+
+                <p class="auth-switch">
+                    Back to
+                    <span id="backToLogin">Sign in</span>
+                </p>
+
+            </div>
+
+            <!-- Email Verification Waiting Form -->
+            <div class="auth-form hidden" id="verifyForm">
+
+                <div class="verify-icon">
+                    <i class="fa-solid fa-envelope-circle-check"></i>
+                </div>
+
+                <h2>Verify Your Email</h2>
+
+                <p class="verify-text">
+                    We sent a verification link to:
+                    <br>
+                    <strong id="verifyEmailText">your email</strong>
+                </p>
+
+                <p class="verify-small">
+                    Check Inbox, Spam, or Promotions. After clicking the link, come back here.
+                </p>
+
+                <button id="checkVerifyBtn" type="button">
+                    I Verified My Email
+                </button>
+
+                <button id="resendVerifyBtn" class="secondary-auth-btn" type="button">
+                    Resend Verification Email
+                </button>
+
+                <p class="auth-switch">
+                    Back to
+                    <span id="verifyBackLogin">Sign in</span>
+                </p>
+
+            </div>
+
+            <!-- Face Verification Demo Form -->
+            <div class="auth-form hidden" id="faceForm">
+
+                <video id="faceVideo" autoplay muted playsinline></video>
+
+                <p class="verify-small" id="faceStatus">
+                    Camera will open only after clicking Verify with Face.
+                    Real Face ID can be added later using passkeys.
+                </p>
+
+                <input
+                    type="text"
+                    id="localUserName"
+                    placeholder="Username">
+
+                <input
+                    type="password"
+                    id="localUserPassword"
+                    placeholder="Password">
+
+                <button id="localLoginBtn" type="button">
+                    Continue
+                </button>
+
+                <p class="auth-switch">
+                    Back to
+                    <span id="faceBackLogin">Sign in</span>
+                </p>
+
+            </div>
+
+            <p id="authMessage" class="auth-message"></p>
+
+        </div>
+
+    </div>
+
+    <!-- Main app wrapper -->
+    <div class="app">
+
+        <!-- Sticky header -->
+        <header class="top-header">
+
+            <div class="brand-box">
+
+                <div class="brand-icon">
+                    <i class="fa-solid fa-house-signal"></i>
+                </div>
+
+                <div class="brand-text">
+                    <h1>Smart Home</h1>
+                    <p>ESP32 • Firebase • DHT11</p>
+                </div>
+
+            </div>
+
+            <div class="header-info">
+
+                <div id="date" class="date-text">
+                    Loading Date...
+                </div>
+
+                <div id="time" class="time-text">
+                    Loading Time...
+                </div>
+
+                <div class="top-temperature">
+                    <i class="fa-solid fa-temperature-half"></i>
+                    <span id="topTemperatureValue">-- °C</span>
+                </div>
+
+            </div>
+
+
+                <button class="logout-btn" id="logoutBtn" style="display: none;">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </button>
+
+        </header>
+
+        <!-- Main content -->
+        <main class="main-container">
+
+            <!-- Dashboard -->
+            <section class="dashboard-card">
+
+                <div class="dashboard-left">
+                    <h2>Dashboard</h2>
+                    <p>Real-Time Smart Home Automation using ESP32 + Firebase</p>
+                </div>
+
+                <div class="dashboard-weather">
+                    <p>Kongalnagaram Weather</p>
+                    <h3 id="weatherMood">Checking...</h3>
+                    <span id="weatherMiniData">-- °C | -- %</span>
+                </div>
+
+            </section>
+
+            <!-- Device control -->
+            <section class="content-section">
+
+                <div class="section-heading">
+                    <h2>
+                        <i class="fa-solid fa-sliders"></i>
+                        Device Control
+                    </h2>
+                    <p>Control appliances from website, wall switch, or Google Home.</p>
+                </div>
+
+                <div class="device-grid">
+
+                    <!-- Fan card -->
+                    <article class="device-card fan-card" id="fanCard">
+
+                        <div class="device-header">
+                            <div class="device-icon fan-icon">
+                                <i class="fa-solid fa-fan"></i>
+                            </div>
+                            <div>
+                                <h3>Fan</h3>
+                                <p id="fanSource">Last: Web</p>
+                            </div>
+                        </div>
+
+                        <div class="device-control">
+                            <h2 id="fanState">OFF</h2>
+                            <label class="switch">
+                                <input type="checkbox" id="fanSwitch">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="device-footer">
+                            <i class="fa-solid fa-clock"></i>
+                            <span id="fanTime">--:--</span>
+                        </div>
+
+                    </article>
+
+                    <!-- Light 1 card -->
+                    <article class="device-card light-card" id="light1Card">
+
+                        <div class="device-header">
+                            <div class="device-icon light-icon">
+                                <i class="fa-solid fa-lightbulb"></i>
+                            </div>
+                            <div>
+                                <h3>Light 1</h3>
+                                <p id="light1Source">Last: Web</p>
+                            </div>
+                        </div>
+
+                        <div class="device-control">
+                            <h2 id="light1State">OFF</h2>
+                            <label class="switch">
+                                <input type="checkbox" id="light1Switch">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="device-footer">
+                            <i class="fa-solid fa-clock"></i>
+                            <span id="light1Time">--:--</span>
+                        </div>
+
+                    </article>
+
+                    <!-- Socket card -->
+                    <article class="device-card socket-card" id="socketCard">
+
+                        <div class="device-header">
+                            <div class="device-icon socket-icon">
+                                <i class="fa-solid fa-plug-circle-bolt"></i>
+                            </div>
+                            <div>
+                                <h3>Socket</h3>
+                                <p id="socketSource">Last: Web</p>
+                            </div>
+                        </div>
+
+                        <div class="device-control">
+                            <h2 id="socketState">OFF</h2>
+                            <label class="switch">
+                                <input type="checkbox" id="socketSwitch">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="device-footer">
+                            <i class="fa-solid fa-clock"></i>
+                            <span id="socketTime">--:--</span>
+                        </div>
+
+                    </article>
+
+                    <!-- Light 2 card -->
+                    <article class="device-card light-card" id="light2Card">
+
+                        <div class="device-header">
+                            <div class="device-icon light-icon">
+                                <i class="fa-solid fa-lightbulb"></i>
+                            </div>
+                            <div>
+                                <h3>Light 2</h3>
+                                <p id="light2Source">Last: Web</p>
+                            </div>
+                        </div>
+
+                        <div class="device-control">
+                            <h2 id="light2State">OFF</h2>
+                            <label class="switch">
+                                <input type="checkbox" id="light2Switch">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="device-footer">
+                            <i class="fa-solid fa-clock"></i>
+                            <span id="light2Time">--:--</span>
+                        </div>
+
+                    </article>
+
+                </div>
+
+            </section>
+
+            <!-- Status row -->
+            <section class="status-grid">
+
+                <article class="status-card">
+                    <div class="status-icon wifi-status">
+                        <i class="fa-solid fa-wifi"></i>
+                    </div>
+                    <div>
+                        <h3>WiFi</h3>
+                        <p id="wifiStatus">Waiting...</p>
+                    </div>
+                </article>
+
+                <article class="status-card">
+                    <div class="status-icon firebase-status">
+                        <i class="fa-solid fa-fire"></i>
+                    </div>
+                    <div>
+                        <h3>Firebase</h3>
+                        <p id="firebaseStatus">Connecting...</p>
+                    </div>
+                </article>
+
+                <article class="status-card">
+                    <div class="status-icon esp-status">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
+                    <div>
+                        <h3>ESP32</h3>
+                        <p id="espStatus">Offline</p>
+                    </div>
+                </article>
+
+                <article class="status-card">
+                    <div class="status-icon update-status">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <div>
+                        <h3>Last Update</h3>
+                        <p id="lastUpdate">--:--:--</p>
+                    </div>
+                </article>
+
+            </section>
+
+            <!-- Summary row -->
+            <section class="summary-grid">
+
+                <article class="summary-card">
+                    <p><i class="fa-solid fa-lightbulb"></i> Devices</p>
+                    <h2>4</h2>
+                </article>
+
+                <article class="summary-card">
+                    <p><i class="fa-solid fa-toggle-on"></i> Running</p>
+                    <h2 id="runningCount">0</h2>
+                </article>
+
+                <article class="summary-card">
+                    <p><i class="fa-solid fa-bolt"></i> Operations Today</p>
+                    <h2 id="operationCount">0</h2>
+                </article>
+
+                <article class="summary-card">
+                    <p><i class="fa-solid fa-calendar-day"></i> Today's Runtime</p>
+                    <h2 id="todayRuntime">0 Min</h2>
+                </article>
+
+            </section>
+
+            <!-- Environment monitoring -->
+            <section class="content-section environment-section">
+
+                <div class="section-heading">
+                    <h2>
+                        <i class="fa-solid fa-temperature-half"></i>
+                        Environment Monitoring
+                    </h2>
+                    <p>DHT11 data. If DHT11 is offline, Kongalnagaram weather is shown.</p>
+                </div>
+
+                <div class="environment-grid">
+
+                    <article class="environment-card">
+                        <div class="environment-icon temp-env">
+                            <i class="fa-solid fa-temperature-half"></i>
+                        </div>
+                        <div>
+                            <p>Temperature</p>
+                            <h2 id="temperatureValue">-- °C</h2>
+                            <span id="temperatureStatus">Waiting for sensor...</span>
+                        </div>
+                    </article>
+
+                    <article class="environment-card">
+                        <div class="environment-icon humidity-env">
+                            <i class="fa-solid fa-droplet"></i>
+                        </div>
+                        <div>
+                            <p>Humidity</p>
+                            <h2 id="humidityValue">-- %</h2>
+                            <span id="humidityStatus">Waiting for sensor...</span>
+                        </div>
+                    </article>
+
+                    <article class="environment-card">
+                        <div class="environment-icon heat-env">
+                            <i class="fa-solid fa-fire"></i>
+                        </div>
+                        <div>
+                            <p>Feels Like</p>
+                            <h2 id="heatIndexValue">-- °C</h2>
+                            <span id="heatIndexStatus">Apparent temperature</span>
+                        </div>
+                    </article>
+
+                    <article class="environment-card">
+                        <div class="environment-icon source-env">
+                            <i class="fa-solid fa-satellite-dish"></i>
+                        </div>
+                        <div>
+                            <p>Data Source</p>
+                            <h2 id="sensorStatus">Offline</h2>
+                            <span id="sensorLastUpdated">Last updated: --</span>
+                        </div>
+                    </article>
+
+                </div>
+
+            </section>
+
+            <!-- Voice assistant integrated feature -->
+            <section class="voice-section">
+
+                <div class="voice-text">
+                    <h2>
+                        <i class="fa-solid fa-microphone-lines"></i>
+                        Google Home Voice Control Active
+                    </h2>
+                    <p>You can control this smart home from the website, manual wall switches, and Google Home voice commands.</p>
+                </div>
+
+                <div class="voice-badges">
+                    <div class="voice-badge google">
+                        <i class="fa-brands fa-google"></i>
+                        Google Home Connected
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- Statistics -->
+            <section class="content-section">
+
+                <div class="section-heading">
+                    <h2>
+                        <i class="fa-solid fa-chart-column"></i>
+                        Statistics
+                    </h2>
+                    <p>Runtime and operation count for each appliance.</p>
+                </div>
+
+                <div class="stats-grid">
+
+                    <article class="stat-card">
+                        <h3><i class="fa-solid fa-fan"></i> Fan</h3>
+                        <p>Runtime</p>
+                        <h2 id="fanRuntime">0 Min</h2>
+                        <hr>
+                        <p>ON Count</p>
+                        <h2 id="fanCount">0</h2>
+                        <hr>
+                        <p>Switch / Web</p>
+                        <h2><span id="fanSwitchCount">0</span> / <span id="fanWebCount">0</span></h2>
+                        <div class="progress"><div id="fanProgress"></div></div>
+                    </article>
+
+                    <article class="stat-card">
+                        <h3><i class="fa-solid fa-lightbulb"></i> Light 1</h3>
+                        <p>Runtime</p>
+                        <h2 id="light1Runtime">0 Min</h2>
+                        <hr>
+                        <p>ON Count</p>
+                        <h2 id="light1Count">0</h2>
+                        <hr>
+                        <p>Switch / Web</p>
+                        <h2><span id="light1SwitchCount">0</span> / <span id="light1WebCount">0</span></h2>
+                        <div class="progress"><div id="light1Progress"></div></div>
+                    </article>
+
+                    <article class="stat-card">
+                        <h3><i class="fa-solid fa-plug-circle-bolt"></i> Socket</h3>
+                        <p>Runtime</p>
+                        <h2 id="socketRuntime">0 Min</h2>
+                        <hr>
+                        <p>ON Count</p>
+                        <h2 id="socketCount">0</h2>
+                        <hr>
+                        <p>Switch / Web</p>
+                        <h2><span id="socketSwitchCount">0</span> / <span id="socketWebCount">0</span></h2>
+                        <div class="progress"><div id="socketProgress"></div></div>
+                    </article>
+
+                    <article class="stat-card">
+                        <h3><i class="fa-solid fa-lightbulb"></i> Light 2</h3>
+                        <p>Runtime</p>
+                        <h2 id="light2Runtime">0 Min</h2>
+                        <hr>
+                        <p>ON Count</p>
+                        <h2 id="light2Count">0</h2>
+                        <hr>
+                        <p>Switch / Web</p>
+                        <h2><span id="light2SwitchCount">0</span> / <span id="light2WebCount">0</span></h2>
+                        <div class="progress"><div id="light2Progress"></div></div>
+                    </article>
+
+                </div>
+
+            </section>
+
+            <!-- Collapsible activity history -->
+            <section class="content-section">
+
+                <button class="history-toggle" id="historyToggle">
+                    <span>
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        Activity History
+                    </span>
+                    <i class="fa-solid fa-chevron-down" id="historyArrow"></i>
+                </button>
+
+                <div class="history-panel" id="historyPanel">
+
+                    <div class="history-list" id="historyList">
+                        <article class="history-item">
+                            <div class="history-icon">
+                                <i class="fa-solid fa-power-off"></i>
+                            </div>
+                            <div>
+                                <h4>Smart Home Started</h4>
+                                <p id="systemStartMessage">Waiting for first activity...</p>
+                            </div>
+                            <span id="systemStartTime">--:--</span>
+                        </article>
+                    </div>
+
+                    <div class="history-list" id="eventLog"></div>
+
+                    <article class="notification-card">
+                        <div class="notification-icon">
+                            <i class="fa-solid fa-bell"></i>
+                        </div>
+                        <div>
+                            <h3>Notifications</h3>
+                            <p id="notificationText">No notifications available.</p>
+                        </div>
+                    </article>
+
+                    <div class="quick-grid">
+                        <article>
+                            <h4>Last Update</h4>
+                            <p id="lastUpdateTime">--:--</p>
+                        </article>
+                        <article>
+                            <h4>Total Operations</h4>
+                            <p id="totalOperations">0</p>
+                        </article>
+                        <article>
+                            <h4>System Mode</h4>
+                            <p id="systemMode">Normal Operation</p>
+                        </article>
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <h3>Smart Home Automation V2</h3>
+            <p>ESP32 • Firebase • GitHub Pages • DHT11 • Google Home Ready</p>
+            <p>Developed by <strong>Arunkumar</strong></p>
+        </footer>
+
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <!-- Main JavaScript -->
+    <script src="script.js"></script>
+
+</body>
+
+</html>
