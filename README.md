@@ -1,10 +1,10 @@
-# ESP32 Smart Home - Priority Sync Final
+# ESP32 Smart Home 
 
 This version reduces glitching by changing the sync architecture.
 
-## Main Fix
 
-The website does not directly write actual device state anymore.
+
+
 
 Website command path:
 
